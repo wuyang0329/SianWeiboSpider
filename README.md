@@ -78,6 +78,7 @@ user_id可以改成任意合法的用户id（爬虫的微博id除外）；filter
 2.大部分情况下，在用户主页的地址栏里就包含了user_id，如”郭碧婷“的地址栏地址为"<https://weibo.cn/u/1677856077?f=search_0>"，其中的"1677856077"就是她的user_id。如图所示：
 ![image](images/user_id.png)
 ![image](images/user_id1.png)
+
 但是部分用户设置了个性域名，他们的地址栏地址就变成了"<https://weibo.cn/个性域名?f=search_0>"的形式。
 事实上，如果仅仅爬取微博，用user_id或个性域名都可以，但是因为本脚本还要爬取用户昵称，而用个性域名表示的网页爬取有一些小问题，需要另外的网页。所以，如果遇到地址栏没有user_id的情况，大家可以点击”资料“，跳转到用户资料页面，如张碧晨的资料页面地址为"<https://weibo.cn/1677856077/info>"，其中的"1677856077"即为张碧晨微博的user_id。如图所示：
 ![image](images/user_id2.png)
