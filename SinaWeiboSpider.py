@@ -11,10 +11,15 @@ import traceback
 from datetime import datetime
 from datetime import timedelta
 from lxml import etree
+import re
+
+cop = re.compile("[^\u4e00-\u9fa5^a-z^A-Z^0-9]") # 匹配不是中文、大小写、数字的其他字符
 
 
 class Weibo:
-    cookie = {"Cookie": "_T_WM=b221da189ce5b90d34df675a361d5fdc; ALF=1549110119; SUB=_2A25xKnU6DeRhGeNL6lEU-C3EyjiIHXVS1RtyrDV6PUJbkdAKLWbkkW1NSNK0RVCv2BL54pQBMr6xyw3dl9zY6CXs; SUHB=0P1MvwHZyTdSd6; SCF=ApdwiR7vHRo7omfhpB0_eotxAug39AEbap2LB8891fgQcf8s9HFFsfvQqJP9QQU-md0Rcv7XL0dgzSrqFBcWb0o.; SSOLoginState=1546519914; MLOGIN=1; M_WEIBOCN_PARAMS=lfid%3D102803%26luicode%3D20000174"}  # 将your cookie替换成自己的cookie
+    # 将your cookie替换成自己的cookie
+    cookie = {"Cookie": "ALF=1588168375; SUB=_2A25zjAGoDeRhGeNL6lEU-C3EyjiIHXVQjq_grDV6PUJbkdAKLUL5kW1NSNK0RQxAT4oJYhw2nGJUsdpZNk13i6fZ; SUHB=0nluJQ4Cktl_co; SCF=AgqZENuI3D_Z_ONwC-9xz-4fbPO7ONsV2LdQZKP7RpdBoS5iWVKbJXlnj-HaZaVlXQ78j9023JCq8z99w7ivB84.; SSOLoginState=1586000376; _T_WM=68655313704; MLOGIN=1; M_WEIBOCN_PARAMS=oid%3D4490073108432655%26luicode%3D20000061%26lfid%3D4490073108432655"}
+
 
     # Weibo类初始化
     def __init__(self, user_id, filter=0):
@@ -133,16 +138,31 @@ class Weibo:
         html = requests.get(url, cookies=self.cookie).content
         selector = etree.HTML(html)
         comments = []
-        pages = int(selector.xpath("//*[@id='pagelist']/form/div/input[1]/@value")[0])
-        pages = 3 if pages > 100 else pages
-        for index in range(1,pages):
+        pages = 0
+        try:
+            pages = int(selector.xpath("//*[@id='pagelist']/form/div/input[1]/@value")[0])
+        except:
+            print("no other pages")
+        pages = 100 if pages > 100 else pages
+        for index in range(pages):
             real_url = pre_url+str(index)
             html = requests.get(real_url, cookies=self.cookie).content
             selector = etree.HTML(html)
+            commet_user_list = selector.xpath("//div/a/text()")
+            commet_user = commet_user_list[11]
+            for i in range(len(commet_user_list)):
+                if (commet_user_list[i] == "操作"):
+                   if (i + 1) <= len(commet_user_list) -1:
+                        commet_user = commet_user_list[i+1]
+                        break
+            print("commet_user is:",commet_user)
             content1 = selector.xpath("//div/span[@class='ctt']/text()")
             content2 = selector.xpath("//div/span[@class='ctt']/a/text()")
+            comments.extend("\n")
             comments.extend(content1)
+            comments.extend("\n")
             comments.extend(content2)
+            comments.extend("\n")
         self.comments.append(comments)
 
 
@@ -262,7 +282,7 @@ class Weibo:
                 page_num = (int)(selector.xpath(
                     "//input[@name='mp']")[0].attrib["value"])
             pattern = r"\d+\.?\d*"
-            for page in range(1, 2):
+            for page in range(3):
                 url2 = "https://weibo.cn/u/%d?filter=%d&page=%d" % (
                     self.user_id, self.filter, page)
                 html2 = requests.get(url2, cookies=self.cookie).content
@@ -339,7 +359,10 @@ class Weibo:
                       result_header
                       )
             for i in range(1, self.weibo_num2 + 1):
-                fw = open(os.path.join(self.save_path,str(i)+".txt"),mode='wb')
+                file_name = str(self.weibo_content[i - 1][:15])
+                file_name = cop.sub('', file_name)  # 将string1中匹配到的字符替换成空字符
+                print("file_name is:",file_name)
+                fw = open(os.path.join(self.save_path,file_name+".txt"),mode='wb')
                 text = (u"微博真实url" + ":" + self.weibo_url[i-1]+ "\n"+
                         u"微博内容: " + self.weibo_content[i - 1] + "\n" +
                         u"微博位置: " + self.weibo_place[i - 1] + "\n" +
@@ -387,7 +410,7 @@ class Weibo:
 def main():
     try:
         # 使用实例,输入一个用户id，所有信息都会存储在wb实例中
-        user_id = 1677856077  # 可以改成任意合法的用户id（爬虫的微博id除外）
+        user_id = 5104872102  #5104872102  # 1402400261可以改成任意合法的用户id（爬虫的微博id除外）
         filter = 1  # 值为0表示爬取全部微博（原创微博+转发微博），值为1表示只爬取原创微博
         wb = Weibo(user_id, filter)  # 调用Weibo类，创建微博实例wb
         wb.start()  # 爬取微博信息
